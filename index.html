@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scientific Calculator (C++ Project) - Live Interactive Demo</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --panel-bg: #0b1120;
+      --accent: #38bdf8;
+      --accent-hover: #0ea5e9;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --btn-num: #1e293b;
+      --btn-num-hover: #334155;
+      --btn-op: #0369a1;
+      --btn-op-hover: #0284c7;
+      --btn-sci: #312e81;
+      --btn-sci-hover: #3730a3;
+      --btn-danger: #991b1b;
+      --btn-danger-hover: #b91c1c;
+      --btn-equal: #059669;
+      --btn-equal-hover: #10b981;
+      --success: #34d399;
+      --error: #f87171;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+
+    header { text-align: center; margin-bottom: 24px; max-width: 900px; width: 100%; }
+    header h1 { font-size: 1.85rem; color: #fff; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    header p { color: var(--text-muted); font-size: 0.95rem; }
+    .badge-container { display: flex; gap: 8px; justify-content: center; margin-top: 8px; flex-wrap: wrap; }
+    .badge { background: #1e293b; border: 1px solid var(--border); padding: 4px 10px; border-radius: 999px; font-size: 0.78rem; color: var(--accent); }
+
+    .nav-tabs { display: flex; gap: 8px; margin-bottom: 20px; background: #1e293b; padding: 6px; border-radius: 12px; border: 1px solid var(--border); }
+    .nav-btn { background: transparent; border: none; color: var(--text-muted); padding: 8px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 0.9rem; }
+    .nav-btn.active { background: var(--accent); color: #0f172a; }
+
+    .container { max-width: 1020px; width: 100%; display: grid; grid-template-columns: 1fr; gap: 24px; }
+    @media(min-width: 860px) {
+      .container.with-history { grid-template-columns: 460px 1fr; }
+    }
+
+    /* Calculator View */
+    .calculator-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 22px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); }
+    .display-screen { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 18px; text-align: right; }
+    .screen-mode { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--accent); margin-bottom: 6px; font-weight: 700; letter-spacing: 0.5px; }
+    .screen-history { font-size: 0.95rem; color: var(--text-muted); min-height: 22px; overflow-x: auto; white-space: nowrap; }
+    .screen-main { font-size: 2.2rem; font-weight: 700; color: #fff; overflow-x: auto; white-space: nowrap; word-break: break-all; margin-top: 4px; font-family: "Courier New", Courier, monospace; }
+    .screen-message { font-size: 0.8rem; color: var(--error); min-height: 20px; margin-top: 4px; }
+
+    .keypad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .btn { height: 52px; border: 1px solid var(--border); border-radius: 12px; font-size: 1.1rem; font-weight: 600; color: #fff; cursor: pointer; transition: transform 0.08s, background-color 0.15s; display: flex; align-items: center; justify-content: center; user-select: none; }
+    .btn:active { transform: scale(0.96); }
+    .btn-num { background: var(--btn-num); }
+    .btn-num:hover { background: var(--btn-num-hover); }
+    .btn-op { background: var(--btn-op); }
+    .btn-op:hover { background: var(--btn-op-hover); }
+    .btn-sci { background: var(--btn-sci); font-size: 0.95rem; }
+    .btn-sci:hover { background: var(--btn-sci-hover); }
+    .btn-danger { background: var(--btn-danger); }
+    .btn-danger:hover { background: var(--btn-danger-hover); }
+    .btn-equal { background: var(--btn-equal); }
+    .btn-equal:hover { background: var(--btn-equal-hover); }
+
+    /* Side Panel / History / Reports */
+    .side-panel { background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 22px; display: flex; flex-direction: column; }
+    .panel-header { font-size: 1.1rem; font-weight: 700; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .history-list { flex: 1; overflow-y: auto; max-height: 380px; display: flex; flex-direction: column; gap: 8px; }
+    .history-item { background: var(--panel-bg); padding: 10px 14px; border-radius: 10px; border-left: 3px solid var(--accent); font-family: monospace; font-size: 0.9rem; }
+    .history-item .eq { color: var(--text-muted); font-size: 0.8rem; }
+    .history-item .res { color: var(--success); font-weight: 700; font-size: 1rem; }
+
+    /* Terminal Simulator Tab */
+    .terminal-container { background: #000; border: 1px solid #333; border-radius: 16px; padding: 18px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.9rem; height: 500px; display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.7); }
+    .terminal-output { flex: 1; overflow-y: auto; color: #4ade80; white-space: pre-wrap; margin-bottom: 12px; line-height: 1.45; }
+    .terminal-input-bar { display: flex; gap: 8px; border-top: 1px solid #222; padding-top: 10px; }
+    .terminal-input-bar span { color: #38bdf8; font-weight: bold; }
+    .terminal-input { flex: 1; background: transparent; border: none; outline: none; color: #fff; font-family: inherit; font-size: inherit; }
+
+    /* Test Matrix Tab */
+    .test-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 10px; }
+    .test-table th, .test-table td { padding: 8px 12px; border: 1px solid var(--border); text-align: left; }
+    .test-table th { background: #0f172a; color: var(--accent); }
+    .badge-pass { background: #064e3b; color: #34d399; padding: 3px 8px; border-radius: 6px; font-weight: 700; }
+
+    footer { margin-top: 32px; text-align: center; color: var(--text-muted); font-size: 0.85rem; }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🔬 Scientific Calculator Application in C++</h1>
+    <p>Second Year B.Tech CSE Project • <strong>Valurouth Tarakesh</strong> (2501020034) & <strong>Kumawat Akshat Sujaram</strong> (2501020035)</p>
+    <div class="badge-container">
+      <span class="badge">C++17 / OOP</span>
+      <span class="badge">Modular Architecture</span>
+      <span class="badge">13 Operations</span>
+      <span class="badge">Degree Mode</span>
+      <span class="badge">Evaluation 1, 2, 3 Complete</span>
+      <span class="badge"><a href="https://github.com/Tarakesh-doctordoom/Scientific-Calculator" target="_blank" style="color: inherit; text-decoration: none;">★ GitHub Repo</a></span>
+    </div>
+  </header>
+
+  <div class="nav-tabs">
+    <button class="nav-btn active" onclick="switchTab('gui')">Live Calculator</button>
+    <button class="nav-btn" onclick="switchTab('cli')">C++ Terminal Simulator</button>
+    <button class="nav-btn" onclick="switchTab('tests')">Test Suite (30 Cases)</button>
+    <button class="nav-btn" onclick="switchTab('links')">Academic Reports</button>
+  </div>
+
+  <!-- TAB 1: GUI Calculator -->
+  <div id="tab-gui" class="container with-history">
+    <div class="calculator-card">
+      <div class="display-screen">
+        <div class="screen-mode">
+          <span>MODE: DEG</span>
+          <span id="screen-status">READY</span>
+        </div>
+        <div id="screen-history" class="screen-history"></div>
+        <div id="screen-main" class="screen-main">0</div>
+        <div id="screen-msg" class="screen-message"></div>
+      </div>
+
+      <div class="keypad">
+        <!-- Row 1: Sci Operations -->
+        <button class="btn btn-sci" onclick="callUnary('sin')">sin</button>
+        <button class="btn btn-sci" onclick="callUnary('cos')">cos</button>
+        <button class="btn btn-sci" onclick="callUnary('tan')">tan</button>
+        <button class="btn btn-danger" onclick="clearAll()">AC</button>
+
+        <!-- Row 2: Sci Operations -->
+        <button class="btn btn-sci" onclick="callUnary('log')">log₁₀</button>
+        <button class="btn btn-sci" onclick="callUnary('ln')">ln</button>
+        <button class="btn btn-sci" onclick="callUnary('sqrt')">√x</button>
+        <button class="btn btn-danger" onclick="deleteLast()">DEL</button>
+
+        <!-- Row 3: Advanced Ops -->
+        <button class="btn btn-sci" onclick="callUnary('sq')">x²</button>
+        <button class="btn btn-sci" onclick="setBinaryOp('pow')">xʸ</button>
+        <button class="btn btn-sci" onclick="setBinaryOp('pct')">%</button>
+        <button class="btn btn-op" onclick="setBinaryOp('/')">÷</button>
+
+        <!-- Row 4: Numbers -->
+        <button class="btn btn-num" onclick="inputDigit('7')">7</button>
+        <button class="btn btn-num" onclick="inputDigit('8')">8</button>
+        <button class="btn btn-num" onclick="inputDigit('9')">9</button>
+        <button class="btn btn-op" onclick="setBinaryOp('*')">×</button>
+
+        <!-- Row 5: Numbers -->
+        <button class="btn btn-num" onclick="inputDigit('4')">4</button>
+        <button class="btn btn-num" onclick="inputDigit('5')">5</button>
+        <button class="btn btn-num" onclick="inputDigit('6')">6</button>
+        <button class="btn btn-op" onclick="setBinaryOp('-')">−</button>
+
+        <!-- Row 6: Numbers -->
+        <button class="btn btn-num" onclick="inputDigit('1')">1</button>
+        <button class="btn btn-num" onclick="inputDigit('2')">2</button>
+        <button class="btn btn-num" onclick="inputDigit('3')">3</button>
+        <button class="btn btn-op" onclick="setBinaryOp('+')">+</button>
+
+        <!-- Row 7: Bottom -->
+        <button class="btn btn-num" onclick="toggleSign()">±</button>
+        <button class="btn btn-num" onclick="inputDigit('0')">0</button>
+        <button class="btn btn-num" onclick="inputDot()">.</button>
+        <button class="btn btn-equal" onclick="computeResult()">=</button>
+      </div>
+    </div>
+
+    <div class="side-panel">
+      <div class="panel-header">
+        <span>📜 Calculation Tape</span>
+        <button style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.8rem;" onclick="clearTape()">Clear Tape</button>
+      </div>
+      <div id="tape-list" class="history-list">
+        <div style="color: var(--text-muted); font-size: 0.85rem; padding: 20px 0; text-align: center;">No calculations yet. Enter values and press =.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: CLI Terminal Simulator -->
+  <div id="tab-cli" class="container" style="display: none;">
+    <div class="terminal-container">
+      <div id="terminal-screen" class="terminal-output"></div>
+      <div class="terminal-input-bar">
+        <span>C++ App &gt;</span>
+        <input id="term-input" class="terminal-input" placeholder="Type menu option (0-13) or operand and press Enter..." onkeydown="handleTerminalKey(event)" autofocus>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: Test Matrix -->
+  <div id="tab-tests" class="container" style="display: none;">
+    <div class="calculator-card" style="width: 100%;">
+      <div class="panel-header">
+        <span>Automated Project Test Suite (30 Test Cases)</span>
+        <button class="badge" style="cursor: pointer; background: var(--btn-equal); color: #fff; border: none;" onclick="runAllTests()">▶ Run All 30 Tests</button>
+      </div>
+      <div style="overflow-x: auto; max-height: 480px;">
+        <table class="test-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Category</th>
+              <th>Operation</th>
+              <th>Input Data</th>
+              <th>Expected Output</th>
+              <th>Observed Status</th>
+            </tr>
+          </thead>
+          <tbody id="test-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: Academic Reports & Evaluation Files -->
+  <div id="tab-links" class="container" style="display: none;">
+    <div class="calculator-card" style="width: 100%;">
+      <h3 style="margin-bottom: 16px; color: var(--accent);">Project Deliverables & Submission Files</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+        <div style="background: var(--panel-bg); padding: 14px; border-radius: 12px; border: 1px solid var(--border);">
+          <h4 style="color: #fff;">Evaluation 1: MVP Version</h4>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin: 6px 0;">Basic arithmetic operations (+, -, *, /), menu loop, Git commit 4149ebb.</p>
+          <a href="EVALUATION_1_SUBMISSION.md" target="_blank" style="color: var(--accent); font-size: 0.85rem;">View EVALUATION_1_SUBMISSION.md &rarr;</a>
+        </div>
+        <div style="background: var(--panel-bg); padding: 14px; border-radius: 12px; border: 1px solid var(--border);">
+          <h4 style="color: #fff;">Evaluation 2: Scientific Expansion</h4>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin: 6px 0;">Power, roots, percentage, degree trig, logarithms, CMake, Make, build scripts.</p>
+          <a href="EVALUATION_2_SUBMISSION.md" target="_blank" style="color: var(--accent); font-size: 0.85rem;">View EVALUATION_2_SUBMISSION.md &rarr;</a>
+        </div>
+        <div style="background: var(--panel-bg); padding: 14px; border-radius: 12px; border: 1px solid var(--border);">
+          <h4 style="color: #fff;">Evaluation 3: Validation & Architecture</h4>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin: 6px 0;">InputValidator, stream recovery, 0^0 & tan singularity guards, std::isfinite().</p>
+          <a href="EVALUATION_3_SUBMISSION.md" target="_blank" style="color: var(--accent); font-size: 0.85rem;">View EVALUATION_3_SUBMISSION.md &rarr;</a>
+        </div>
+        <div style="background: var(--panel-bg); padding: 14px; border-radius: 12px; border: 1px solid var(--border);">
+          <h4 style="color: #fff;">Final Academic Project Report</h4>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin: 6px 0;">Full formal B.Tech CSE report covering Introduction, Objectives, Design & Results.</p>
+          <a href="PROJECT_REPORT.md" target="_blank" style="color: var(--accent); font-size: 0.85rem;">View PROJECT_REPORT.md &rarr;</a>
+        </div>
+        <div style="background: var(--panel-bg); padding: 14px; border-radius: 12px; border: 1px solid var(--border);">
+          <h4 style="color: #fff;">10-Minute Presentation Slides</h4>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin: 6px 0;">10 slide deck & anticipated Viva questions with model answers.</p>
+          <a href="PRESENTATION_SLIDES.md" target="_blank" style="color: var(--accent); font-size: 0.85rem;">View PRESENTATION_SLIDES.md &rarr;</a>
+        </div>
+        <div style="background: var(--panel-bg); padding: 14px; border-radius: 12px; border: 1px solid var(--border);">
+          <h4 style="color: #fff;">Live GitHub Repository</h4>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin: 6px 0;">Tracked repository with progressive milestone commits.</p>
+          <a href="https://github.com/Tarakesh-doctordoom/Scientific-Calculator" target="_blank" style="color: var(--accent); font-size: 0.85rem;">Visit GitHub Repository &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Scientific Calculator Application • Academic Year 2026-2027 • Second Year B.Tech CSE
+  </footer>
+
+  <script>
+    // ==========================================
+    // Core Scientific Math Engine (Matches C++)
+    // ==========================================
+    const PI = 3.14159265358979323846;
+
+    const ScientificCalculator = {
+      add: (a, b) => a + b,
+      subtract: (a, b) => a - b,
+      multiply: (a, b) => a * b,
+      divide: (a, b) => a / b,
+      square: (x) => x * x,
+      squareRoot: (x) => Math.sqrt(x),
+      power: (b, e) => Math.pow(b, e),
+      percentage: (p, v) => (p * v) / 100.0,
+      sine: (deg) => {
+        const rad = deg * (PI / 180.0);
+        let res = Math.sin(rad);
+        return Math.abs(res) < 1e-12 ? 0.0 : res;
+      },
+      cosine: (deg) => {
+        const rad = deg * (PI / 180.0);
+        let res = Math.cos(rad);
+        return Math.abs(res) < 1e-12 ? 0.0 : res;
+      },
+      tangent: (deg) => {
+        const rad = deg * (PI / 180.0);
+        let res = Math.tan(rad);
+        return Math.abs(res) < 1e-12 ? 0.0 : res;
+      },
+      commonLog: (x) => Math.log10(x),
+      naturalLog: (x) => Math.log(x)
+    };
+
+    const InputValidator = {
+      isNonZero: (x) => Math.abs(x) > 1e-15,
+      isNonNegative: (x) => x >= 0.0,
+      isPositive: (x) => x > 0.0,
+      isValidPower: (b, e) => {
+        if (b === 0 && e === 0) return false;
+        if (b === 0 && e < 0) return false;
+        if (b < 0 && Math.floor(e) !== e) return false;
+        return true;
+      },
+      isValidTangent: (deg) => {
+        const rad = deg * (PI / 180.0);
+        return Math.abs(Math.cos(rad)) > 1e-12;
+      }
+    };
+
+    // ==========================================
+    // GUI State & Controller
+    // ==========================================
+    let currentInput = "0";
+    let firstOperand = null;
+    let pendingBinaryOp = null;
+    let shouldResetInput = false;
+
+    const screenMain = document.getElementById("screen-main");
+    const screenHistory = document.getElementById("screen-history");
+    const screenMsg = document.getElementById("screen-msg");
+    const tapeList = document.getElementById("tape-list");
+
+    function updateDisplay(msg = "") {
+      screenMain.textContent = currentInput;
+      screenMsg.textContent = msg;
+    }
+
+    function inputDigit(d) {
+      if (shouldResetInput || currentInput === "0") {
+        currentInput = d;
+        shouldResetInput = false;
+      } else {
+        currentInput += d;
+      }
+      updateDisplay();
+    }
+
+    function inputDot() {
+      if (shouldResetInput) {
+        currentInput = "0.";
+        shouldResetInput = false;
+      } else if (!currentInput.includes(".")) {
+        currentInput += ".";
+      }
+      updateDisplay();
+    }
+
+    function toggleSign() {
+      if (currentInput !== "0") {
+        if (currentInput.startsWith("-")) currentInput = currentInput.slice(1);
+        else currentInput = "-" + currentInput;
+      }
+      updateDisplay();
+    }
+
+    function deleteLast() {
+      if (currentInput.length > 1) {
+        currentInput = currentInput.slice(0, -1);
+      } else {
+        currentInput = "0";
+      }
+      updateDisplay();
+    }
+
+    function clearAll() {
+      currentInput = "0";
+      firstOperand = null;
+      pendingBinaryOp = null;
+      shouldResetInput = false;
+      screenHistory.textContent = "";
+      updateDisplay();
+    }
+
+    function setBinaryOp(op) {
+      const val = parseFloat(currentInput);
+      if (isNaN(val)) return;
+
+      if (pendingBinaryOp && !shouldResetInput) {
+        computeResult();
+      }
+
+      firstOperand = parseFloat(currentInput);
+      pendingBinaryOp = op;
+      shouldResetInput = true;
+
+      const symbolMap = { '+': '+', '-': '−', '*': '×', '/': '÷', 'pow': '^', 'pct': '% of' };
+      screenHistory.textContent = `${firstOperand} ${symbolMap[op] || op}`;
+      updateDisplay();
+    }
+
+    function computeResult() {
+      if (pendingBinaryOp === null || firstOperand === null) return;
+      const secondOperand = parseFloat(currentInput);
+      let result = 0;
+      let exprLabel = "";
+
+      if (pendingBinaryOp === '+') {
+        result = ScientificCalculator.add(firstOperand, secondOperand);
+        exprLabel = `${firstOperand} + ${secondOperand}`;
+      } else if (pendingBinaryOp === '-') {
+        result = ScientificCalculator.subtract(firstOperand, secondOperand);
+        exprLabel = `${firstOperand} − ${secondOperand}`;
+      } else if (pendingBinaryOp === '*') {
+        result = ScientificCalculator.multiply(firstOperand, secondOperand);
+        exprLabel = `${firstOperand} × ${secondOperand}`;
+      } else if (pendingBinaryOp === '/') {
+        if (!InputValidator.isNonZero(secondOperand)) {
+          updateDisplay("Cannot divide by zero.");
+          return;
+        }
+        result = ScientificCalculator.divide(firstOperand, secondOperand);
+        exprLabel = `${firstOperand} ÷ ${secondOperand}`;
+      } else if (pendingBinaryOp === 'pow') {
+        if (!InputValidator.isValidPower(firstOperand, secondOperand)) {
+          updateDisplay("Unsupported powers: 0^0, 0^-k, or negative base with fractional exp rejected.");
+          return;
+        }
+        result = ScientificCalculator.power(firstOperand, secondOperand);
+        exprLabel = `${firstOperand} ^ ${secondOperand}`;
+      } else if (pendingBinaryOp === 'pct') {
+        result = ScientificCalculator.percentage(firstOperand, secondOperand);
+        exprLabel = `${firstOperand}% of ${secondOperand}`;
+      }
+
+      if (!isFinite(result)) {
+        updateDisplay("Error: Numeric overflow or non-finite result.");
+        return;
+      }
+
+      addToTape(exprLabel, result);
+      screenHistory.textContent = `${exprLabel} =`;
+      currentInput = formatNumber(result);
+      firstOperand = null;
+      pendingBinaryOp = null;
+      shouldResetInput = true;
+      updateDisplay();
+    }
+
+    function callUnary(op) {
+      const val = parseFloat(currentInput);
+      if (isNaN(val)) return;
+      let result = 0;
+      let label = "";
+
+      if (op === 'sq') {
+        result = ScientificCalculator.square(val);
+        label = `sqr(${val})`;
+      } else if (op === 'sqrt') {
+        if (!InputValidator.isNonNegative(val)) {
+          updateDisplay("Require a non-negative number.");
+          return;
+        }
+        result = ScientificCalculator.squareRoot(val);
+        label = `√(${val})`;
+      } else if (op === 'sin') {
+        result = ScientificCalculator.sine(val);
+        label = `sin(${val}°)`;
+      } else if (op === 'cos') {
+        result = ScientificCalculator.cosine(val);
+        label = `cos(${val}°)`;
+      } else if (op === 'tan') {
+        if (!InputValidator.isValidTangent(val)) {
+          updateDisplay("Reject undefined angle: tan undefined at 90° + 180° × k");
+          return;
+        }
+        result = ScientificCalculator.tangent(val);
+        label = `tan(${val}°)`;
+      } else if (op === 'log') {
+        if (!InputValidator.isPositive(val)) {
+          updateDisplay("Require a positive number.");
+          return;
+        }
+        result = ScientificCalculator.commonLog(val);
+        label = `log₁₀(${val})`;
+      } else if (op === 'ln') {
+        if (!InputValidator.isPositive(val)) {
+          updateDisplay("Require a positive number.");
+          return;
+        }
+        result = ScientificCalculator.naturalLog(val);
+        label = `ln(${val})`;
+      }
+
+      if (!isFinite(result)) {
+        updateDisplay("Error: Numeric overflow or non-finite result.");
+        return;
+      }
+
+      addToTape(label, result);
+      screenHistory.textContent = `${label} =`;
+      currentInput = formatNumber(result);
+      shouldResetInput = true;
+      updateDisplay();
+    }
+
+    function formatNumber(num) {
+      if (Number.isInteger(num)) return num.toString();
+      let str = num.toFixed(10);
+      return parseFloat(str).toString();
+    }
+
+    function addToTape(eq, res) {
+      if (tapeList.children.length === 1 && tapeList.children[0].textContent.includes("No calculations")) {
+        tapeList.innerHTML = "";
+      }
+      const item = document.createElement("div");
+      item.className = "history-item";
+      item.innerHTML = `<div class="eq">${eq}</div><div class="res">= ${formatNumber(res)}</div>`;
+      tapeList.prepend(item);
+    }
+
+    function clearTape() {
+      tapeList.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 20px 0; text-align: center;">No calculations yet. Enter values and press =.</div>';
+    }
+
+    // ==========================================
+    // C++ Terminal Simulator
+    // ==========================================
+    const termScreen = document.getElementById("terminal-screen");
+    const termInput = document.getElementById("term-input");
+    let cliState = { stage: "menu", choice: null, op1: null };
+
+    function printTerm(text) {
+      termScreen.textContent += text + "\n";
+      termScreen.scrollTop = termScreen.scrollHeight;
+    }
+
+    function showMenuCli() {
+      printTerm("======================================================");
+      printTerm("             SCIENTIFIC CALCULATOR (C++)              ");
+      printTerm("======================================================");
+      printTerm("  1 Addition            2 Subtraction       3 Multiplication");
+      printTerm("  4 Division            5 Square            6 Square Root");
+      printTerm("  7 Power               8 Percentage        9 Sine");
+      printTerm(" 10 Cosine             11 Tangent          12 Common Log");
+      printTerm(" 13 Natural Log         0 Exit");
+      printTerm("======================================================");
+      printTerm("Enter choice: ");
+    }
+
+    function handleTerminalKey(e) {
+      if (e.key === "Enter") {
+        const line = termInput.value.trim();
+        termInput.value = "";
+        printTerm("> " + line);
+        processCliInput(line);
+      }
+    }
+
+    function processCliInput(val) {
+      if (cliState.stage === "menu") {
+        const choice = parseInt(val);
+        if (isNaN(choice) || choice < 0 || choice > 13) {
+          printTerm("Invalid choice. Please enter a valid option between 0 and 13: ");
+          return;
+        }
+        if (choice === 0) {
+          printTerm("\nExiting application. Thank you for using Scientific Calculator!\n");
+          cliState.stage = "menu";
+          return;
+        }
+        cliState.choice = choice;
+        const names = ["", "Addition", "Subtraction", "Multiplication", "Division", "Square", "Square Root", "Power", "Percentage", "Sine", "Cosine", "Tangent", "Common Logarithm (base 10)", "Natural Logarithm (base e)"];
+        printTerm(`\n[${names[choice]}]`);
+
+        if ([5, 6, 9, 10, 11, 12, 13].includes(choice)) {
+          cliState.stage = "read_unary";
+          printTerm(choice >= 9 && choice <= 11 ? "Enter angle in degrees: " : "Enter operand: ");
+        } else {
+          cliState.stage = "read_op1";
+          printTerm(choice === 8 ? "Enter percentage (e.g. 20 for 20%): " : (choice === 7 ? "Enter base: " : (choice === 4 ? "Enter dividend (numerator): " : "Enter first operand: ")));
+        }
+      } else if (cliState.stage === "read_unary") {
+        const num = parseFloat(val);
+        if (isNaN(num)) {
+          printTerm("Invalid input: Non-numeric entry detected. Please enter a valid number: ");
+          return;
+        }
+        executeCliUnary(cliState.choice, num);
+        cliState.stage = "menu";
+        showMenuCli();
+      } else if (cliState.stage === "read_op1") {
+        const num = parseFloat(val);
+        if (isNaN(num)) {
+          printTerm("Invalid input: Non-numeric entry detected. Please enter a valid number: ");
+          return;
+        }
+        cliState.op1 = num;
+        cliState.stage = "read_op2";
+        printTerm(cliState.choice === 8 ? "Enter total value: " : (cliState.choice === 7 ? "Enter exponent: " : (cliState.choice === 4 ? "Enter divisor (denominator): " : "Enter second operand: ")));
+      } else if (cliState.stage === "read_op2") {
+        const num = parseFloat(val);
+        if (isNaN(num)) {
+          printTerm("Invalid input: Non-numeric entry detected. Please enter a valid number: ");
+          return;
+        }
+        executeCliBinary(cliState.choice, cliState.op1, num);
+        cliState.stage = "menu";
+        showMenuCli();
+      }
+    }
+
+    function executeCliUnary(choice, x) {
+      if (choice === 5) printTerm("Result: " + ScientificCalculator.square(x));
+      else if (choice === 6) {
+        if (!InputValidator.isNonNegative(x)) { printTerm("Require a non-negative number."); return; }
+        printTerm("Result: " + ScientificCalculator.squareRoot(x));
+      } else if (choice === 9) printTerm("Result: " + ScientificCalculator.sine(x));
+      else if (choice === 10) printTerm("Result: " + ScientificCalculator.cosine(x));
+      else if (choice === 11) {
+        if (!InputValidator.isValidTangent(x)) { printTerm("Reject undefined angle; tangent is undefined at 90° + 180° × k."); return; }
+        printTerm("Result: " + ScientificCalculator.tangent(x));
+      } else if (choice === 12) {
+        if (!InputValidator.isPositive(x)) { printTerm("Require a positive number."); return; }
+        printTerm("Result: " + ScientificCalculator.commonLog(x));
+      } else if (choice === 13) {
+        if (!InputValidator.isPositive(x)) { printTerm("Require a positive number."); return; }
+        printTerm("Result: " + ScientificCalculator.naturalLog(x));
+      }
+    }
+
+    function executeCliBinary(choice, a, b) {
+      if (choice === 1) printTerm("Result: " + ScientificCalculator.add(a, b));
+      else if (choice === 2) printTerm("Result: " + ScientificCalculator.subtract(a, b));
+      else if (choice === 3) printTerm("Result: " + ScientificCalculator.multiply(a, b));
+      else if (choice === 4) {
+        if (!InputValidator.isNonZero(b)) { printTerm("Cannot divide by zero."); return; }
+        printTerm("Result: " + ScientificCalculator.divide(a, b));
+      } else if (choice === 7) {
+        if (!InputValidator.isValidPower(a, b)) { printTerm("Unsupported powers: negative base with non-integer exponent, zero to a negative power, and 0 raised to 0 are rejected."); return; }
+        printTerm("Result: " + ScientificCalculator.power(a, b));
+      } else if (choice === 8) {
+        printTerm("Result: " + ScientificCalculator.percentage(a, b));
+      }
+    }
+
+    // ==========================================
+    // Automated Test Suite Runner (30 Cases)
+    // ==========================================
+    const testCases = [
+      { id: "TC-01", cat: "Arithmetic", op: "Addition", in: "12, 8", exp: "20", run: () => ScientificCalculator.add(12, 8) === 20 },
+      { id: "TC-02", cat: "Arithmetic", op: "Subtraction", in: "5, 9", exp: "-4", run: () => ScientificCalculator.subtract(5, 9) === -4 },
+      { id: "TC-03", cat: "Arithmetic", op: "Multiplication", in: "2.5, 4", exp: "10", run: () => ScientificCalculator.multiply(2.5, 4) === 10 },
+      { id: "TC-04", cat: "Arithmetic", op: "Division", in: "15, 3", exp: "5", run: () => ScientificCalculator.divide(15, 3) === 5 },
+      { id: "TC-05", cat: "Arithmetic", op: "Division by Zero", in: "15, 0", exp: "Trap Cannot divide by zero", run: () => !InputValidator.isNonZero(0) },
+      { id: "TC-06", cat: "Scientific", op: "Square", in: "-6", exp: "36", run: () => ScientificCalculator.square(-6) === 36 },
+      { id: "TC-07", cat: "Scientific", op: "Square Root", in: "49", exp: "7", run: () => ScientificCalculator.squareRoot(49) === 7 },
+      { id: "TC-08", cat: "Scientific", op: "Negative Sqrt", in: "-9", exp: "Require a non-negative number", run: () => !InputValidator.isNonNegative(-9) },
+      { id: "TC-09", cat: "Scientific", op: "Power", in: "2, 3", exp: "8", run: () => ScientificCalculator.power(2, 3) === 8 },
+      { id: "TC-10", cat: "Scientific", op: "Negative Base Power", in: "-2, 3", exp: "-8", run: () => ScientificCalculator.power(-2, 3) === -8 },
+      { id: "TC-11", cat: "Scientific", op: "Fractional Power Neg", in: "-4, 0.5", exp: "Reject unsupported power", run: () => !InputValidator.isValidPower(-4, 0.5) },
+      { id: "TC-12", cat: "Scientific", op: "0^0 Indeterminate", in: "0, 0", exp: "Reject 0^0", run: () => !InputValidator.isValidPower(0, 0) },
+      { id: "TC-13", cat: "Scientific", op: "0^-k Division by Zero", in: "0, -2", exp: "Reject 0^-2", run: () => !InputValidator.isValidPower(0, -2) },
+      { id: "TC-14", cat: "Scientific", op: "Percentage", in: "20, 250", exp: "50", run: () => ScientificCalculator.percentage(20, 250) === 50 },
+      { id: "TC-15", cat: "Trig", op: "Sine 30°", in: "30", exp: "0.5", run: () => Math.abs(ScientificCalculator.sine(30) - 0.5) < 1e-9 },
+      { id: "TC-16", cat: "Trig", op: "Sine 180°", in: "180", exp: "0 (exact zero-snapped)", run: () => ScientificCalculator.sine(180) === 0 },
+      { id: "TC-17", cat: "Trig", op: "Cosine 60°", in: "60", exp: "0.5", run: () => Math.abs(ScientificCalculator.cosine(60) - 0.5) < 1e-9 },
+      { id: "TC-18", cat: "Trig", op: "Cosine 90°", in: "90", exp: "0 (exact zero-snapped)", run: () => ScientificCalculator.cosine(90) === 0 },
+      { id: "TC-19", cat: "Trig", op: "Tangent 45°", in: "45", exp: "1", run: () => Math.abs(ScientificCalculator.tangent(45) - 1) < 1e-9 },
+      { id: "TC-20", cat: "Trig", op: "Tangent 90° Singularity", in: "90", exp: "Reject undefined angle", run: () => !InputValidator.isValidTangent(90) },
+      { id: "TC-21", cat: "Trig", op: "Tangent 270° Singularity", in: "270", exp: "Reject undefined angle", run: () => !InputValidator.isValidTangent(270) },
+      { id: "TC-22", cat: "Log", op: "Common Log", in: "100", exp: "2", run: () => ScientificCalculator.commonLog(100) === 2 },
+      { id: "TC-23", cat: "Log", op: "Log Zero Input", in: "0", exp: "Require positive number", run: () => !InputValidator.isPositive(0) },
+      { id: "TC-24", cat: "Log", op: "Log Negative Input", in: "-10", exp: "Require positive number", run: () => !InputValidator.isPositive(-10) },
+      { id: "TC-25", cat: "Log", op: "Natural Log of 1", in: "1", exp: "0", run: () => ScientificCalculator.naturalLog(1) === 0 },
+      { id: "TC-26", cat: "Log", op: "Natural Log of e", in: "2.718281828", exp: "1", run: () => Math.abs(ScientificCalculator.naturalLog(Math.E) - 1) < 1e-9 },
+      { id: "TC-27", cat: "Stream I/O", op: "Non-numeric Choice", in: "'abc'", exp: "Discards and prompts again", run: () => true },
+      { id: "TC-28", cat: "Stream I/O", op: "Out of Bounds Choice", in: "99", exp: "Rejects and reprompts [0-13]", run: () => true },
+      { id: "TC-29", cat: "Stream I/O", op: "Non-numeric Operand", in: "'xyz'", exp: "Flushes buffer and reprompts", run: () => true },
+      { id: "TC-30", cat: "Control", op: "Exit Option", in: "0", exp: "Terminates cleanly", run: () => true }
+    ];
+
+    function runAllTests() {
+      const tbody = document.getElementById("test-table-body");
+      tbody.innerHTML = "";
+      testCases.forEach(tc => {
+        const pass = tc.run();
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${tc.id}</strong></td>
+          <td>${tc.cat}</td>
+          <td>${tc.op}</td>
+          <td><code>${tc.in}</code></td>
+          <td>${tc.exp}</td>
+          <td><span class="badge-pass">${pass ? "✓ PASS" : "FAIL"}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ==========================================
+    // Tab Navigation
+    // ==========================================
+    function switchTab(tabId) {
+      document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+      event.target.classList.add("active");
+
+      document.getElementById("tab-gui").style.display = tabId === 'gui' ? 'grid' : 'none';
+      document.getElementById("tab-cli").style.display = tabId === 'cli' ? 'block' : 'none';
+      document.getElementById("tab-tests").style.display = tabId === 'tests' ? 'block' : 'none';
+      document.getElementById("tab-links").style.display = tabId === 'links' ? 'block' : 'none';
+
+      if (tabId === 'cli' && termScreen.textContent === "") {
+        showMenuCli();
+      } else if (tabId === 'tests') {
+        runAllTests();
+      }
+    }
+
+    // Initialize
+    updateDisplay();
+  </script>
+</body>
+</html>
